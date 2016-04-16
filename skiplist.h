@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <ctime>
 
@@ -39,7 +40,7 @@ public:
 
 template<class E> skiplist<E>::skiplist()
 {
-	header = new skiplist::node(NULL, 0, 0, NULL);
+	header = new node(NULL, 0, 0, NULL);
 	currentHeight = 0;
 	maxHeight = 15;
 
@@ -73,8 +74,6 @@ template<class E> bool skiplist<E>::add(E e)
 	{
 		height++;
 	};
-	node** prevNodes = new node*[height + 1];
-	node** nextNodes = new node*[height + 1];
 
 	if (height > currentHeight)
 	{
@@ -83,14 +82,17 @@ template<class E> bool skiplist<E>::add(E e)
 		currentHeight = height;
 	}
 
-	node* current = header;
-	node* next = header->next[currentHeight];
+	node** prevNodes = new node*[height + 1];
+	node** nextNodes = new node*[height + 1];
 
 	for (int i = 0; i <= height; i++)
 	{
 		prevNodes[i] = header;
 		nextNodes[i] = NULL;
 	};
+
+	node* current = header;
+	node* next = header->next[currentHeight];
 
 	for (int level = currentHeight; level >= 0; level--)
 	{
@@ -103,24 +105,16 @@ template<class E> bool skiplist<E>::add(E e)
 			}
 			else if (*(next->data) > e)
 			{
-				if (level <= height)
-				{
-					prevNodes[level] = current;
-					nextNodes[level] = next;
-				}
 				next = current;
 				break;
 			}
 			current = next;
 			next = next->next[level];
 		}
-	}
-
-	for (int i = height; i >= 0; i--)
-	{
-		if (prevNodes[i] != header)
+		if (level <= height)
 		{
-			cout << (prevNodes[i]);
+			prevNodes[level] = current;
+			nextNodes[level] = current->next[level];
 		}
 	}
 
