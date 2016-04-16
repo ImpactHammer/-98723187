@@ -17,7 +17,7 @@ private:
 		node** next;
 
 		node(E*, int, int, node**);
-
+		~node();
 	};
 
 	node* header;
@@ -35,6 +35,7 @@ public:
 
 	bool add(E);
 	bool contains(E);
+	bool remove(E);
 
 };
 
@@ -67,6 +68,11 @@ template<class E> skiplist<E>::node::node(E* data, int height, int nextCapacity,
 	}
 }
 
+template<class E> skiplist<E>::node::~node()
+{
+	delete data, next;
+}
+
 template<class E> bool skiplist<E>::add(E e)
 {
 	int height = 0;
@@ -75,11 +81,14 @@ template<class E> bool skiplist<E>::add(E e)
 		height++;
 	};
 
+	node* newHeader;
 	if (height > currentHeight)
 	{
-		node* newHeader = new node(NULL, height, header->height, header->next);
-		header = newHeader;
-		currentHeight = height;
+		newHeader = new node(NULL, height, header->height, header->next);
+	}
+	else
+	{
+		newHeader = header;
 	}
 
 	node** prevNodes = new node*[height + 1];
@@ -87,12 +96,12 @@ template<class E> bool skiplist<E>::add(E e)
 
 	for (int i = 0; i <= height; i++)
 	{
-		prevNodes[i] = header;
+		prevNodes[i] = newHeader;
 		nextNodes[i] = NULL;
 	};
 
-	node* current = header;
-	node* next = header->next[currentHeight];
+	node* current = newHeader;
+	node* next = newHeader->next[currentHeight];
 
 	for (int level = currentHeight; level >= 0; level--)
 	{
@@ -116,6 +125,12 @@ template<class E> bool skiplist<E>::add(E e)
 			prevNodes[level] = current;
 			nextNodes[level] = current->next[level];
 		}
+	}
+
+	if (height > currentHeight)
+	{
+		header = newHeader;
+		currentHeight = height;
 	}
 
 	node* newNode = new node(new E(e), height, height, nextNodes);
@@ -150,4 +165,50 @@ template<class E> bool skiplist<E>::contains(E e)
 		}
 	}
 	return false;
+}
+
+template<class E> bool skiplist<E>::remove(E e)
+{
+	node** prevNodes = new node*[currentHeight + 1];
+	node* current = header;
+	node* next = header->next[currentHeight];
+	node* found = NULL;
+	for (int i = 0; i <= currentHeight; i++)
+	{
+		prevNodes[i] = header;
+	};
+
+	for (int level = currentHeight; level >= 0; level--)
+	{
+		next = current->next[level];
+		while (next != NULL)
+		{
+			if (*(next->data) == e)
+			{
+				if (found == NULL)
+				{
+					found = next;
+				}
+				break;
+			}
+			else if (*(next->data) > e)
+			{
+				next = current;
+				break;
+			}
+			current = next;
+			next = next->next[level];
+		}
+		prevNodes[level] = current;
+	}
+	if (found == NULL)
+	{
+		return false;
+	}
+	for (int i = 0; i <= found->height; i++)
+	{
+		prevNodes[i]->next[i] = found->next[i];
+	}
+	delete found;
+	return true;
 }
